@@ -5,9 +5,10 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch backend/src/server.ts",
-    "build": "tsc -p backend/tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
+    "vercel-build": "prisma generate && prisma migrate deploy",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "studio": "prisma studio",
