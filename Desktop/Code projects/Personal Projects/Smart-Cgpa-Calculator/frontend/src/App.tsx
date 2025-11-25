@@ -541,6 +541,16 @@ function App() {
           <p className="text-xs text-gray-500 mt-2">
             All calculations are performed client-side. No data is sent to any server.
           </p>
+          <p className="text-sm text-gray-300 mt-4">
+            Made by <a 
+              href="https://github.com/workwithaaditya" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+            >
+              Aaditya
+            </a>
+          </p>
         </div>
       </footer>
     </div>
