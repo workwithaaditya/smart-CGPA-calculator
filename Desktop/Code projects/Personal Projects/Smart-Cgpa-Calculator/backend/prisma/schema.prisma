@@ -1,0 +1,85 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - stores authenticated user information
+model User {
+  id            String    @id @default(cuid())
+  googleId      String    @unique
+  email         String    @unique
+  name          String?
+  picture       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  subjects      Subject[]
+  semesters     Semester[]
+  
+  @@index([googleId])
+  @@index([email])
+}
+
+// Semester model - for future multi-semester support
+model Semester {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    // e.g., "Semester 5", "Fall 2024"
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects      Subject[]
+  
+  @@index([userId])
+  @@index([userId, isActive])
+}
+
+// Subject model - stores subject details per user
+model Subject {
+  id            String    @id @default(cuid())
+  userId        String
+  semesterId    String?
+  
+  // Subject details
+  code          String
+  name          String
+  cie           Float     // Internal marks (out of 50)
+  see           Float     @default(0) // Semester-end marks (out of 100)
+  credits       Int
+  
+  // Calculated fields (cached for performance)
+  total         Float?    // CIE + SEE_scaled
+  gp            Int?      // Grade point
+  weighted      Float?    // GP × Credits
+  
+  // Metadata
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  semester      Semester? @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([semesterId])
+  @@index([userId, semesterId])
+}
+
+// Session model for express-session with connect-pg-simple
+model Session {
+  sid           String    @id
+  sess          Json
+  expire        DateTime
+  
+  @@index([expire])
+}
