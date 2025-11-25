@@ -536,10 +536,7 @@ function App() {
       <footer className="bg-gray-900 border-t border-gray-800 text-white p-6 mt-12">
         <div className="container mx-auto text-center">
           <p className="text-sm text-gray-400">
-            Smart CGPA Calculator v2.0 | Built with React + TypeScript + Tailwind CSS
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            All calculations are performed client-side. No data is sent to any server.
+            Smart CGPA Calculator v2.0
           </p>
           <p className="text-sm text-gray-300 mt-4">
             Made by <a 
