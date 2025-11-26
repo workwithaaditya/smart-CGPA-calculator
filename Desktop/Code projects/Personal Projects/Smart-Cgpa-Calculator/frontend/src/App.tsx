@@ -64,8 +64,19 @@ function App() {
     credits: 3
   });
 
-  // Check authentication status on mount
+  // Check authentication status on mount and handle OAuth token
   useEffect(() => {
+    // Check for token in URL (OAuth redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token) {
+      // Save token to localStorage
+      localStorage.setItem('auth_token', token);
+      // Remove token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     checkAuthStatus();
   }, []);
 
@@ -83,8 +94,16 @@ function App() {
 
   const checkAuthStatus = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
+      const headers: HeadersInit = {};
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/status`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       if (response.ok) {
         const data = await response.json();
@@ -121,6 +140,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('auth_token');
       await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/logout`, {
         credentials: 'include'
       });
@@ -731,3 +751,6 @@ function App() {
 }
 
 export default App;
+
+
+
