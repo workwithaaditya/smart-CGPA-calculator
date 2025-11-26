@@ -2,9 +2,10 @@
  * Main App Component
  * 
  * Orchestrates the entire Smart CGPA Calculator application.
+ * Supports local-first usage with optional cloud sync via Google OAuth.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubjectCard } from './components/SubjectCard';
 import { Charts } from './components/Charts';
@@ -17,15 +18,40 @@ import {
 } from './lib/SGPAEngine';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { LogIn, LogOut, User } from 'lucide-react';
 
-// Start with no subjects (new users add their first subject manually)
-const INITIAL_SUBJECTS: Subject[] = [];
+// Local storage key
+const LOCAL_STORAGE_KEY = 'smart-cgpa-subjects';
+
+// Load subjects from localStorage
+const loadLocalSubjects = (): Subject[] => {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error('Failed to load subjects from localStorage:', error);
+    return [];
+  }
+};
+
+// Save subjects to localStorage
+const saveLocalSubjects = (subjects: Subject[]) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(subjects));
+  } catch (error) {
+    console.error('Failed to save subjects to localStorage:', error);
+  }
+};
 
 function App() {
-  const [subjects, setSubjects] = useState<Subject[]>(INITIAL_SUBJECTS);
-  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | undefined>(
-    INITIAL_SUBJECTS[0]?.code
-  );
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; picture?: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // App state - load from localStorage first
+  const [subjects, setSubjects] = useState<Subject[]>(loadLocalSubjects());
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | undefined>(undefined);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'subjects' | 'analytics'>('subjects');
@@ -37,6 +63,96 @@ function App() {
     see: 50,
     credits: 3
   });
+
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  // Save subjects to localStorage whenever they change
+  useEffect(() => {
+    saveLocalSubjects(subjects);
+    // If authenticated, also sync to backend
+    if (isAuthenticated) {
+      syncToBackend();
+    }
+  }, [subjects, isAuthenticated]);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/status`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.isAuthenticated) {
+          setIsAuthenticated(true);
+          setUser(data.user);
+          // Load subjects from backend
+          await loadFromBackend();
+        }
+      }
+    } catch (error) {
+      console.log('Not authenticated, using local storage');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogin = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    window.location.href = `${apiUrl}/auth/google`;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/logout`, {
+        credentials: 'include'
+      });
+      setIsAuthenticated(false);
+      setUser(null);
+      // Keep local subjects after logout
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const loadFromBackend = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const backendSubjects = await response.json();
+        if (backendSubjects.length > 0) {
+          // Merge with local subjects (backend takes precedence)
+          setSubjects(backendSubjects);
+          saveLocalSubjects(backendSubjects);
+        } else if (subjects.length > 0) {
+          // If backend is empty but we have local subjects, sync them up
+          await syncToBackend();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from backend:', error);
+    }
+  };
+
+  const syncToBackend = async () => {
+    if (!isAuthenticated || subjects.length === 0) return;
+    
+    try {
+      // Simple bulk sync - you can enhance this with proper conflict resolution
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ subjects })
+      });
+    } catch (error) {
+      console.error('Failed to sync to backend:', error);
+    }
+  };
   
   // Calculate current SGPA
   const result = calculateSGPA(subjects, DEFAULT_GRADING_CONFIG);
@@ -180,6 +296,7 @@ function App() {
       />
       {/* Inject keyframes once */}
       <style>{`@keyframes subtleFlow {0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}`}</style>
+      
       {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
@@ -187,6 +304,43 @@ function App() {
         className="relative pb-10 pt-6"
       >
         <div className="container mx-auto px-4">
+          {/* Auth Button - Top Right */}
+          <div className="absolute top-6 right-6 z-50">
+            {isLoading ? (
+              <div className="w-10 h-10 rounded-full bg-gray-800/50 animate-pulse"></div>
+            ) : isAuthenticated && user ? (
+              <div className="flex items-center gap-3 bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 border border-gray-700/50">
+                {user.picture && (
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <span className="text-sm text-gray-300 hidden sm:block max-w-[150px] truncate">
+                  {user.name}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md hover:bg-gray-700/50 transition-colors flex items-center gap-2"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline text-sm">Logout</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogin}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl"
+                title="Sign in with Google to sync your data"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign In</span>
+              </button>
+            )}
+          </div>
+
           {/* Title */}
           <div className="flex flex-col items-center mb-6">
             <motion.h1
@@ -199,6 +353,11 @@ function App() {
             <p className="text-gray-400 text-base font-light mt-2">
               Interactive SGPA prediction with intelligent planning
             </p>
+            {!isAuthenticated && (
+              <p className="text-xs text-gray-500 mt-1">
+                Working offline • Sign in to sync across devices
+              </p>
+            )}
           </div>
 
           {/* Navigation Tabs */}
