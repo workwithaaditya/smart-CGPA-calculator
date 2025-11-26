@@ -171,6 +171,7 @@ function App() {
   };
 
   const loadFromBackend = async () => {
+    console.log('📥 Loading subjects from backend...');
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects`, {
         credentials: 'include',
@@ -179,9 +180,12 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         const backendSubjects = data.subjects || data; // Handle both {subjects: []} and [] formats
+        console.log('📥 Loaded', backendSubjects.length, 'subjects from backend');
         // Backend is source of truth - always use backend data
         setSubjects(backendSubjects);
         saveLocalSubjects(backendSubjects);
+      } else {
+        console.error('📥 Failed to load - status:', response.status);
       }
     } catch (error) {
       console.error('Failed to load from backend:', error);
@@ -384,7 +388,8 @@ function App() {
     
     // Sync to backend IMMEDIATELY (no debounce for delete)
     if (isAuthenticated) {
-      console.log('Delete: Syncing', updatedSubjects.length, 'subjects to backend immediately');
+      console.log('🗑️ Delete: Syncing', updatedSubjects.length, 'subjects to backend immediately');
+      console.log('🗑️ Subjects being synced:', updatedSubjects.map(s => ({ id: s.id, code: s.code, name: s.name })));
       (async () => {
         try {
           const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
@@ -394,9 +399,13 @@ function App() {
             body: JSON.stringify({ subjects: updatedSubjects })
           });
           if (response.ok) {
-            console.log('Delete: Sync successful ✅');
+            const result = await response.json();
+            console.log('🗑️ Delete: Sync successful ✅ - Backend returned', result.subjects?.length, 'subjects');
+            console.log('🗑️ Backend subjects:', result.subjects?.map((s: any) => ({ id: s.id, code: s.code, name: s.name })));
           } else {
-            console.error('Delete: Sync failed with status', response.status);
+            console.error('🗑️ Delete: Sync failed with status', response.status);
+            const errorText = await response.text();
+            console.error('🗑️ Error:', errorText);
           }
         } catch (error) {
           console.error('Delete: Sync error', error);
