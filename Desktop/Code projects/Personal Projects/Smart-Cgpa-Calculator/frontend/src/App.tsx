@@ -71,9 +71,12 @@ function App() {
 
   // Save subjects to localStorage whenever they change
   useEffect(() => {
-    saveLocalSubjects(subjects);
-    // If authenticated, also sync to backend
-    if (isAuthenticated) {
+    // Only save to localStorage if not authenticated (guest mode)
+    if (!isAuthenticated) {
+      saveLocalSubjects(subjects);
+    }
+    // If authenticated, sync to backend
+    if (isAuthenticated && subjects.length > 0) {
       syncToBackend();
     }
   }, [subjects, isAuthenticated]);
