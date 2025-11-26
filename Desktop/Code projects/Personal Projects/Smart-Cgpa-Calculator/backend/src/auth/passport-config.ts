@@ -20,10 +20,9 @@ passport.deserializeUser(async (id: string, done) => {
       where: { id },
       select: {
         id: true,
-        googleId: true,
         email: true,
         name: true,
-        picture: true
+        image: true
       }
     });
     done(null, user);
@@ -40,19 +39,38 @@ passport.use(new GoogleStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      // Check if user exists
-      let user = await prisma.user.findUnique({
-        where: { googleId: profile.id }
+      const email = profile.emails?.[0]?.value || '';
+      
+      // Check if account exists (using Account table for OAuth)
+      let account = await prisma.account.findFirst({
+        where: {
+          provider: 'google',
+          providerAccountId: profile.id
+        },
+        include: { user: true }
       });
 
-      if (!user) {
-        // Create new user
+      let user;
+      
+      if (!account) {
+        // Create new user and account
         user = await prisma.user.create({
           data: {
-            googleId: profile.id,
-            email: profile.emails?.[0]?.value || '',
+            email: email,
             name: profile.displayName,
-            picture: profile.photos?.[0]?.value
+            image: profile.photos?.[0]?.value,
+            emailVerified: new Date(),
+            accounts: {
+              create: {
+                type: 'oauth',
+                provider: 'google',
+                providerAccountId: profile.id,
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                token_type: 'Bearer',
+                scope: 'profile email'
+              }
+            }
           }
         });
         
@@ -67,12 +85,22 @@ passport.use(new GoogleStrategy({
           }
         });
       } else {
-        // Update user info if changed
-        user = await prisma.user.update({
+        user = account.user;
+        
+        // Update user info and tokens
+        await prisma.user.update({
           where: { id: user.id },
           data: {
             name: profile.displayName,
-            picture: profile.photos?.[0]?.value
+            image: profile.photos?.[0]?.value
+          }
+        });
+        
+        await prisma.account.update({
+          where: { id: account.id },
+          data: {
+            access_token: accessToken,
+            refresh_token: refreshToken
           }
         });
       }

@@ -17,13 +17,25 @@ router.get('/google',
 // Google OAuth callback
 router.get('/google/callback',
   passport.authenticate('google', { 
-    failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed` 
+    failureRedirect: `${process.env.FRONTEND_URL}/?error=auth_failed` 
   }),
   (req, res) => {
     // Successful authentication, redirect to frontend
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
   }
 );
+
+// Check auth status
+router.get('/status', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.json({ 
+      isAuthenticated: true,
+      user: req.user 
+    });
+  } else {
+    res.json({ isAuthenticated: false });
+  }
+});
 
 // Logout
 router.post('/logout', (req, res) => {

@@ -49,10 +49,10 @@ app.use(cors({
 app.use(session({
   store: new PgSessionStore({
     conString: process.env.DATABASE_URL,
-    tableName: 'Session',
-    createTableIfMissing: false // We handle this with Prisma
+    tableName: 'session_store', // Use different table name to avoid conflict with NextAuth Session model
+    createTableIfMissing: true
   }),
-  secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
