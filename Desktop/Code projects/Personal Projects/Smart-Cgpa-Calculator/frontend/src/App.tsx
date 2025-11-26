@@ -64,6 +64,20 @@ function App() {
     credits: 3
   });
 
+  // Helper to get auth headers
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem('auth_token');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
   // Check authentication status on mount and handle OAuth token
   useEffect(() => {
     // Check for token in URL (OAuth redirect)
@@ -94,16 +108,9 @@ function App() {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const headers: HeadersInit = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/status`, {
         credentials: 'include',
-        headers
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const data = await response.json();
@@ -140,10 +147,12 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      localStorage.removeItem('auth_token');
       await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/logout`, {
-        credentials: 'include'
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
+      localStorage.removeItem('auth_token');
       setIsAuthenticated(false);
       setUser(null);
       // Clear all data on logout
@@ -157,7 +166,8 @@ function App() {
   const loadFromBackend = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       if (response.ok) {
         const backendSubjects = await response.json();
@@ -182,7 +192,7 @@ function App() {
       // Simple bulk sync - you can enhance this with proper conflict resolution
       await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify({ subjects })
       });
