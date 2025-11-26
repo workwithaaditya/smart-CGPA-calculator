@@ -382,26 +382,26 @@ function App() {
       setSelectedSubjectCode(updatedSubjects[0]?.code);
     }
     
-    // Sync to backend with updated subjects (debounced)
+    // Sync to backend IMMEDIATELY (no debounce for delete)
     if (isAuthenticated) {
-      if (addSyncTimerRef.current) {
-        clearTimeout(addSyncTimerRef.current);
-      }
-      console.log('Delete: Scheduling sync in 1s with', updatedSubjects.length, 'subjects');
-      addSyncTimerRef.current = setTimeout(async () => {
-        console.log('Delete: Syncing', updatedSubjects.length, 'subjects to backend');
+      console.log('Delete: Syncing', updatedSubjects.length, 'subjects to backend immediately');
+      (async () => {
         try {
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
             method: 'POST',
             headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ subjects: updatedSubjects })
           });
-          console.log('Delete: Sync successful');
+          if (response.ok) {
+            console.log('Delete: Sync successful ✅');
+          } else {
+            console.error('Delete: Sync failed with status', response.status);
+          }
         } catch (error) {
-          console.error('Failed to sync after delete:', error);
+          console.error('Delete: Sync error', error);
         }
-      }, 1000);
+      })();
     }
   };
   
