@@ -236,18 +236,30 @@ function App() {
   
   // Handle SEE change for a subject
   const handleSeeChange = useCallback((subjectId: string, newSee: number) => {
-    setSubjects(prev =>
-      prev.map((s: Subject) => (s.id === subjectId ? { ...s, see: newSee } : s))
-    );
-    
-    // Debounced sync after slider stops moving (2 seconds)
-    if (syncTimerRef.current) {
-      clearTimeout(syncTimerRef.current);
-    }
-    syncTimerRef.current = setTimeout(() => {
-      syncToBackend(); // syncToBackend already checks isAuthenticated internally
-    }, 2000);
-  }, []); // No dependencies - syncToBackend is stable
+    setSubjects(prev => {
+      const updatedSubjects = prev.map((s: Subject) => (s.id === subjectId ? { ...s, see: newSee } : s));
+      
+      // Debounced sync after slider stops moving (2 seconds)
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+      }
+      syncTimerRef.current = setTimeout(async () => {
+        if (!isAuthenticated || updatedSubjects.length === 0) return;
+        try {
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ subjects: updatedSubjects })
+          });
+        } catch (error) {
+          console.error('Failed to sync after slider change:', error);
+        }
+      }, 2000);
+      
+      return updatedSubjects;
+    });
+  }, [isAuthenticated, getAuthHeaders]); // Add dependencies
 
   // Create memoized callback map for each subject (prevents re-renders)
   const seeChangeCallbacks = useMemo(() => {
@@ -370,19 +382,23 @@ function App() {
       setSelectedSubjectCode(updatedSubjects[0]?.code);
     }
     
-    // If authenticated and subject has backend ID, delete from backend
-    if (isAuthenticated && subjectToDelete?.id && !subjectToDelete.id.startsWith('local-')) {
-      try {
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/${subjectToDelete.id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: getAuthHeaders()
-        });
-        // Sync remaining subjects after delete
-        setTimeout(() => syncToBackend(), 500);
-      } catch (error) {
-        console.error('Failed to delete subject from backend:', error);
+    // Sync to backend with updated subjects (debounced)
+    if (isAuthenticated) {
+      if (addSyncTimerRef.current) {
+        clearTimeout(addSyncTimerRef.current);
       }
+      addSyncTimerRef.current = setTimeout(async () => {
+        try {
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            credentials: 'include',
+            body: JSON.stringify({ subjects: updatedSubjects })
+          });
+        } catch (error) {
+          console.error('Failed to sync after delete:', error);
+        }
+      }, 1000);
     }
   };
   
