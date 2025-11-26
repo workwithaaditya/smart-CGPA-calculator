@@ -605,6 +605,21 @@ function App() {
                   </div>
                 );
               })()}
+              
+              {/* Planner Component */}
+              {showPlanner && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8"
+                >
+                  <Planner
+                    subjects={subjects}
+                    currentSgpa={result.sgpa}
+                    config={DEFAULT_GRADING_CONFIG}
+                  />
+                </motion.div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -619,14 +634,6 @@ function App() {
                 selectedSubjectCode={selectedSubjectCode}
                 config={DEFAULT_GRADING_CONFIG}
               />
-              
-              {showPlanner && (
-                <Planner
-                  subjects={subjects}
-                  currentSgpa={result.sgpa}
-                  config={DEFAULT_GRADING_CONFIG}
-                />
-              )}
             </motion.div>
           )}
         </AnimatePresence>
