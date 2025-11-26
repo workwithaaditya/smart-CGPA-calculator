@@ -191,22 +191,6 @@ function App() {
       console.error('Failed to load from backend:', error);
     }
   };
-
-  const syncToBackend = useCallback(async () => {
-    if (!isAuthenticated || subjects.length === 0) return;
-    
-    try {
-      // Simple bulk sync - you can enhance this with proper conflict resolution
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({ subjects })
-      });
-    } catch (error) {
-      console.error('Failed to sync to backend:', error);
-    }
-  }, [isAuthenticated, subjects, getAuthHeaders]);
   
   // Calculate current SGPA (memoized to prevent recalculation on every render)
   const result = useMemo(() => 
