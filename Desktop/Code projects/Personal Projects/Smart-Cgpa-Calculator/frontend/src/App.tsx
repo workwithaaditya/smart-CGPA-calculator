@@ -88,7 +88,9 @@ function App() {
         if (data.isAuthenticated) {
           setIsAuthenticated(true);
           setUser(data.user);
-          // Load subjects from backend
+          // Clear localStorage and load from backend
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+          setSubjects([]);
           await loadFromBackend();
         }
       }
@@ -111,7 +113,9 @@ function App() {
       });
       setIsAuthenticated(false);
       setUser(null);
-      // Keep local subjects after logout
+      // Clear all data on logout
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      setSubjects([]);
     } catch (error) {
       console.error('Logout failed:', error);
     }
