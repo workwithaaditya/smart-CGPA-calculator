@@ -64,8 +64,8 @@ function App() {
   const [newSubjectForm, setNewSubjectForm] = useState({
     code: '',
     name: '',
-    cie: 40,
-    see: 50,
+    cie: undefined as unknown as number,
+    see: 100,
     credits: 3
   });
 
@@ -270,7 +270,7 @@ function App() {
   // Add new subject
   const resetSubjectForm = () => {
     setEditingSubject(null);
-    setNewSubjectForm({ code: '', name: '', cie: 40, see: 50, credits: 3 });
+    setNewSubjectForm({ code: '', name: '', cie: undefined as unknown as number, see: 100, credits: 3 });
   };
 
   const openAddSubjectModal = () => {
@@ -281,6 +281,10 @@ function App() {
   const handleSubmitSubject = () => {
     if (!newSubjectForm.code.trim() || !newSubjectForm.name.trim()) {
       alert('Please enter subject code and name');
+      return;
+    }
+    if (!Number.isFinite(newSubjectForm.cie)) {
+      alert('Please enter CIE marks (0-50)');
       return;
     }
     if (newSubjectForm.cie < 0 || newSubjectForm.cie > 50) {
@@ -791,7 +795,7 @@ function App() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Computer Graphics"
+                    placeholder="e.g., Data Structures using C"
                     value={newSubjectForm.name}
                     onChange={(e) => setNewSubjectForm({...newSubjectForm, name: e.target.value})}
                     className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -807,8 +811,12 @@ function App() {
                       type="number"
                       min="0"
                       max="50"
-                      value={newSubjectForm.cie}
-                      onChange={(e) => setNewSubjectForm({...newSubjectForm, cie: parseInt(e.target.value) || 0})}
+                      placeholder="e.g., 40"
+                      value={Number.isFinite(newSubjectForm.cie) ? newSubjectForm.cie : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewSubjectForm({...newSubjectForm, cie: val === '' ? (undefined as unknown as number) : (parseInt(val) || 0)});
+                      }}
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -832,8 +840,9 @@ function App() {
                     <input
                       type="number"
                       min="1"
-                      max="10"
+                      max="20"
                       value={newSubjectForm.credits}
+                      placeholder="e.g., 3"
                       onChange={(e) => setNewSubjectForm({...newSubjectForm, credits: parseInt(e.target.value) || 1})}
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
