@@ -5,7 +5,7 @@
  * and real-time statistics (Total, GP, Weighted Points).
  */
 
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { MoreVertical, Trash2, Edit } from 'lucide-react';
 import { SubjectSlider } from './SubjectSlider';
 import {
@@ -46,11 +46,13 @@ const SubjectCardComponent: React.FC<SubjectCardProps> = ({
   const total = calculateTotal(cie, see, config);
   const gp = gpForTotal(total, config);
   
-  // Calculate max SGPA if this subject gets SEE = 100
-  const maxSubjects = allSubjects.map(s => 
-    s.code === code ? { ...s, see: config.maxSEE } : s
-  );
-  const maxResult = calculateSGPA(maxSubjects, config);
+  // Calculate max SGPA if this subject gets SEE = 100 (memoized)
+  const maxResult = useMemo(() => {
+    const maxSubjects = allSubjects.map(s => 
+      s.code === code ? { ...s, see: config.maxSEE } : s
+    );
+    return calculateSGPA(maxSubjects, config);
+  }, [allSubjects, code, config]);
   
   const cardAccent = gp >= 9 ? 'from-green-900/40 via-green-800/30 to-green-700/30' :
                      gp >= 8 ? 'from-blue-900/40 via-blue-800/30 to-blue-700/30' :

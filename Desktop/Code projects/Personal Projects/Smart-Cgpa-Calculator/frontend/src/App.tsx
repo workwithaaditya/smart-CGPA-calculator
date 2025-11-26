@@ -67,8 +67,8 @@ function App() {
   // Debounce timer for slider sync
   const syncTimerRef = useRef<NodeJS.Timeout>();
 
-  // Helper to get auth headers
-  const getAuthHeaders = (): HeadersInit => {
+  // Helper to get auth headers (memoized)
+  const getAuthHeaders = useCallback((): HeadersInit => {
     const token = localStorage.getItem('auth_token');
     const headers: HeadersInit = {
       'Content-Type': 'application/json'
@@ -79,7 +79,7 @@ function App() {
     }
     
     return headers;
-  };
+  }, []); // Token checked on each call, no dependencies needed
 
   // Check authentication status on mount and handle OAuth token
   useEffect(() => {
@@ -182,7 +182,7 @@ function App() {
     }
   };
 
-  const syncToBackend = async () => {
+  const syncToBackend = useCallback(async () => {
     if (!isAuthenticated || subjects.length === 0) return;
     
     try {
@@ -196,10 +196,13 @@ function App() {
     } catch (error) {
       console.error('Failed to sync to backend:', error);
     }
-  };
+  }, [isAuthenticated, subjects, getAuthHeaders]);
   
-  // Calculate current SGPA
-  const result = calculateSGPA(subjects, DEFAULT_GRADING_CONFIG);
+  // Calculate current SGPA (memoized to prevent recalculation on every render)
+  const result = useMemo(() => 
+    calculateSGPA(subjects, DEFAULT_GRADING_CONFIG),
+    [subjects]
+  );
   const [showOverview, setShowOverview] = useState(false);
 
   // Dynamic accent for SGPA box based on value
@@ -247,7 +250,7 @@ function App() {
       map.set(subject.code, (newSee: number) => handleSeeChange(subject.code, newSee));
     });
     return map;
-  }, [subjects.map(s => s.code).join(','), handleSeeChange]);
+  }, [subjects.length, handleSeeChange]); // Only recreate if subjects count changes
   
   // Add new subject
   const resetSubjectForm = () => {
