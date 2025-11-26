@@ -27,7 +27,12 @@ const LOCAL_STORAGE_KEY = 'smart-cgpa-subjects';
 const loadLocalSubjects = (): Subject[] => {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const subjects = saved ? JSON.parse(saved) : [];
+    // Ensure each subject has an ID (generate temp ID if missing)
+    return subjects.map((s: Subject) => ({
+      ...s,
+      id: s.id || `local-${s.code}-${Date.now()}-${Math.random()}`
+    }));
   } catch (error) {
     console.error('Failed to load subjects from localStorage:', error);
     return [];
@@ -230,9 +235,9 @@ function App() {
   const dynamicGradient = `linear-gradient(120deg, ${bgSet[0]}, ${bgSet[1]}, ${bgSet[2]})`;
   
   // Handle SEE change for a subject
-  const handleSeeChange = useCallback((code: string, newSee: number) => {
+  const handleSeeChange = useCallback((subjectId: string, newSee: number) => {
     setSubjects(prev =>
-      prev.map((s: Subject) => (s.code === code ? { ...s, see: newSee } : s))
+      prev.map((s: Subject) => (s.id === subjectId ? { ...s, see: newSee } : s))
     );
     
     // Debounced sync after slider stops moving (2 seconds)
@@ -248,7 +253,9 @@ function App() {
   const seeChangeCallbacks = useMemo(() => {
     const map = new Map<string, (newSee: number) => void>();
     subjects.forEach(subject => {
-      map.set(subject.code, (newSee: number) => handleSeeChange(subject.code, newSee));
+      if (subject.id) {
+        map.set(subject.id, (newSee: number) => handleSeeChange(subject.id!, newSee));
+      }
     });
     return map;
   }, [subjects.length, handleSeeChange]); // Only recreate if subjects count changes
@@ -314,6 +321,7 @@ function App() {
     } else {
       // Add new
       const newSubject: Subject = {
+        id: `local-${newSubjectForm.code}-${Date.now()}`,
         code: newSubjectForm.code.toUpperCase(),
         name: newSubjectForm.name,
         cie: newSubjectForm.cie,
@@ -349,21 +357,21 @@ function App() {
   };
   
   // Remove subject (allow removing final subject; show empty state)
-  const handleRemoveSubject = async (code: string) => {
-    const subjectToDelete = subjects.find(s => s.code === code);
+  const handleRemoveSubject = async (subjectId: string) => {
+    const subjectToDelete = subjects.find(s => s.id === subjectId);
     
     // Remove from local state
-    const updatedSubjects = subjects.filter((s: Subject) => s.code !== code);
+    const updatedSubjects = subjects.filter((s: Subject) => s.id !== subjectId);
     setSubjects(updatedSubjects);
     saveLocalSubjects(updatedSubjects); // Update localStorage immediately
     
-    if (selectedSubjectCode === code) {
+    if (selectedSubjectCode === subjectToDelete?.code) {
       // select another or clear selection
       setSelectedSubjectCode(updatedSubjects[0]?.code);
     }
     
     // If authenticated and subject has backend ID, delete from backend
-    if (isAuthenticated && subjectToDelete?.id) {
+    if (isAuthenticated && subjectToDelete?.id && !subjectToDelete.id.startsWith('local-')) {
       try {
         await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/${subjectToDelete.id}`, {
           method: 'DELETE',
@@ -621,7 +629,7 @@ function App() {
                         <div className="flex flex-col gap-7 w-full">
                           {groups[credits].map(subject => (
                             <motion.div
-                              key={subject.code}
+                              key={subject.id || subject.code}
                               initial={{ opacity: 0, y: 20 }}
                               animate={{ opacity: 1, y: 0 }}
                               whileHover={{ scale: 1.02 }}
@@ -637,8 +645,8 @@ function App() {
                               >
                                 <SubjectCard
                                   subject={subject}
-                                  onSeeChange={seeChangeCallbacks.get(subject.code)!}
-                                  onRemove={() => handleRemoveSubject(subject.code)}
+                                  onSeeChange={seeChangeCallbacks.get(subject.id!)!}
+                                  onRemove={() => handleRemoveSubject(subject.id!)}
                                   onEdit={() => {
                                     setEditingSubject(subject);
                                     setNewSubjectForm({
