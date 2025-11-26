@@ -173,14 +173,9 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         const backendSubjects = data.subjects || data; // Handle both {subjects: []} and [] formats
-        if (backendSubjects.length > 0) {
-          // Merge with local subjects (backend takes precedence)
-          setSubjects(backendSubjects);
-          saveLocalSubjects(backendSubjects);
-        } else if (subjects.length > 0) {
-          // If backend is empty but we have local subjects, sync them up
-          await syncToBackend();
-        }
+        // Backend is source of truth - always use backend data
+        setSubjects(backendSubjects);
+        saveLocalSubjects(backendSubjects);
       }
     } catch (error) {
       console.error('Failed to load from backend:', error);
@@ -324,12 +319,13 @@ function App() {
     const subjectToDelete = subjects.find(s => s.code === code);
     
     // Remove from local state
-    setSubjects((prev: Subject[]) => prev.filter((s: Subject) => s.code !== code));
+    const updatedSubjects = subjects.filter((s: Subject) => s.code !== code);
+    setSubjects(updatedSubjects);
+    saveLocalSubjects(updatedSubjects); // Update localStorage immediately
     
     if (selectedSubjectCode === code) {
       // select another or clear selection
-      const remaining = subjects.filter(s => s.code !== code);
-      setSelectedSubjectCode(remaining[0]?.code);
+      setSelectedSubjectCode(updatedSubjects[0]?.code);
     }
     
     // If authenticated and subject has backend ID, delete from backend
