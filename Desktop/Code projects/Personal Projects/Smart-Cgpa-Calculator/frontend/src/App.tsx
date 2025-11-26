@@ -49,8 +49,8 @@ function App() {
   const [user, setUser] = useState<{ name: string; email: string; picture?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // App state - load from localStorage first
-  const [subjects, setSubjects] = useState<Subject[]>(loadLocalSubjects());
+  // App state - start with empty array, load after auth check
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | undefined>(undefined);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
@@ -93,12 +93,22 @@ function App() {
           setUser(data.user);
           // Clear localStorage and load from backend
           localStorage.removeItem(LOCAL_STORAGE_KEY);
-          setSubjects([]);
           await loadFromBackend();
+        } else {
+          // Not authenticated, load from localStorage
+          const localSubjects = loadLocalSubjects();
+          setSubjects(localSubjects);
         }
+      } else {
+        // Not authenticated, load from localStorage
+        const localSubjects = loadLocalSubjects();
+        setSubjects(localSubjects);
       }
     } catch (error) {
       console.log('Not authenticated, using local storage');
+      // Load from localStorage on error
+      const localSubjects = loadLocalSubjects();
+      setSubjects(localSubjects);
     } finally {
       setIsLoading(false);
     }
