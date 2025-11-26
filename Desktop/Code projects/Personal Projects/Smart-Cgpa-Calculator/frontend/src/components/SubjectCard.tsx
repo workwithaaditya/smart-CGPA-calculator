@@ -120,11 +120,8 @@ const SubjectCardComponent: React.FC<SubjectCardProps> = ({
         </div>
       </div>
       
-      {/* Grade Point above slider */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="px-3 py-1 rounded-md bg-black/30 text-white text-sm font-semibold tracking-wide">
-          GP: {gp}
-        </div>
+      {/* CIE info above slider */}
+      <div className="flex items-center justify-end mb-2">
         <div className="text-xs text-gray-400">
           CIE {cie}/{config.maxCIE}
         </div>
