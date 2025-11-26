@@ -16,6 +16,7 @@ export interface GradeBucket {
 }
 
 export interface Subject {
+  id?: string;      // Backend database ID (optional, for cloud sync)
   code: string;
   name: string;
   cie: number;      // Internal marks (out of 50)

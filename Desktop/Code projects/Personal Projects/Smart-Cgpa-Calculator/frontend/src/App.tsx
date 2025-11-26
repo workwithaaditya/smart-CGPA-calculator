@@ -294,12 +294,29 @@ function App() {
   };
   
   // Remove subject (allow removing final subject; show empty state)
-  const handleRemoveSubject = (code: string) => {
+  const handleRemoveSubject = async (code: string) => {
+    const subjectToDelete = subjects.find(s => s.code === code);
+    
+    // Remove from local state
     setSubjects((prev: Subject[]) => prev.filter((s: Subject) => s.code !== code));
+    
     if (selectedSubjectCode === code) {
       // select another or clear selection
       const remaining = subjects.filter(s => s.code !== code);
       setSelectedSubjectCode(remaining[0]?.code);
+    }
+    
+    // If authenticated and subject has backend ID, delete from backend
+    if (isAuthenticated && subjectToDelete?.id) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/${subjectToDelete.id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: getAuthHeaders()
+        });
+      } catch (error) {
+        console.error('Failed to delete subject from backend:', error);
+      }
     }
   };
   
