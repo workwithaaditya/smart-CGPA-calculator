@@ -5,7 +5,7 @@
  * Supports local-first usage with optional cloud sync via Google OAuth.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubjectCard } from './components/SubjectCard';
 import { Charts } from './components/Charts';
@@ -63,6 +63,9 @@ function App() {
     see: 50,
     credits: 3
   });
+
+  // Debounce timer for slider sync
+  const syncTimerRef = useRef<NodeJS.Timeout>();
 
   // Helper to get auth headers
   const getAuthHeaders = (): HeadersInit => {
@@ -232,7 +235,15 @@ function App() {
     setSubjects(prev =>
       prev.map((s: Subject) => (s.code === code ? { ...s, see: newSee } : s))
     );
-  }, []);
+    
+    // Debounced sync after slider stops moving (2 seconds)
+    if (syncTimerRef.current) {
+      clearTimeout(syncTimerRef.current);
+    }
+    syncTimerRef.current = setTimeout(() => {
+      syncToBackend(); // syncToBackend already checks isAuthenticated internally
+    }, 2000);
+  }, []); // No dependencies - syncToBackend is stable
 
   // Create memoized callback map for each subject (prevents re-renders)
   const seeChangeCallbacks = useMemo(() => {
@@ -329,6 +340,8 @@ function App() {
           credentials: 'include',
           headers: getAuthHeaders()
         });
+        // Sync remaining subjects after delete
+        setTimeout(() => syncToBackend(), 500);
       } catch (error) {
         console.error('Failed to delete subject from backend:', error);
       }
