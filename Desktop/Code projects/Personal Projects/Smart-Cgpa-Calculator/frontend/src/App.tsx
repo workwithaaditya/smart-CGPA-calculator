@@ -46,7 +46,7 @@ const saveLocalSubjects = (subjects: Subject[]) => {
 function App() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string; picture?: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; image?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // App state - start with empty array, load after auth check
@@ -327,9 +327,9 @@ function App() {
               <div className="w-10 h-10 rounded-full bg-gray-800/50 animate-pulse"></div>
             ) : isAuthenticated && user ? (
               <div className="flex items-center gap-3 bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 border border-gray-700/50">
-                {user.picture && (
+                {user.image && (
                   <img
-                    src={user.picture}
+                    src={user.image}
                     alt={user.name}
                     className="w-8 h-8 rounded-full"
                   />
