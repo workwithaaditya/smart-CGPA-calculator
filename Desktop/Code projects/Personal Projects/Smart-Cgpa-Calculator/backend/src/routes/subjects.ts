@@ -307,6 +307,11 @@ router.post('/bulk', async (req, res) => {
       });
     }
 
+    // Delete all existing subjects for this user to prevent duplicates
+    await prisma.subject.deleteMany({
+      where: { userId }
+    });
+
     // Create all subjects
     const createdSubjects = await prisma.$transaction(
       subjects.map(sub => {
@@ -330,6 +335,14 @@ router.post('/bulk', async (req, res) => {
         });
       })
     );
+
+    res.status(201).json({ subjects: createdSubjects });
+  } catch (error) {
+    console.error('Error bulk creating subjects:', error);
+    res.status(500).json({ error: 'Failed to bulk create subjects' });
+  }
+});
+
 // POST recalculate cached metrics for all user subjects
 router.post('/recalculate', async (req, res) => {
   try {
@@ -350,11 +363,43 @@ router.post('/recalculate', async (req, res) => {
   }
 });
 
-    res.status(201).json({ subjects: createdSubjects });
+// DELETE cleanup duplicates (emergency use)
+router.delete('/cleanup-duplicates', async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    
+    // Get all subjects for user
+    const allSubjects = await prisma.subject.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Find duplicates by name+code combination
+    const seen = new Map();
+    const toDelete = [];
+    
+    for (const subject of allSubjects) {
+      const key = `${subject.name}-${subject.code}`;
+      if (seen.has(key)) {
+        toDelete.push(subject.id);
+      } else {
+        seen.set(key, subject.id);
+      }
+    }
+
+    // Delete duplicates
+    const deleted = await prisma.subject.deleteMany({
+      where: { id: { in: toDelete } }
+    });
+
+    res.json({ 
+      message: 'Duplicates cleaned', 
+      deletedCount: deleted.count,
+      remainingCount: seen.size 
+    });
   } catch (error) {
-    console.error('Error bulk creating subjects:', error);
-    res.status(500).json({ error: 'Failed to bulk create subjects' });
+    console.error('Cleanup error:', error);
+    res.status(500).json({ error: 'Failed to cleanup duplicates' });
   }
 });
-
 export default router;
