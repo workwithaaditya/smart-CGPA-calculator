@@ -9,6 +9,8 @@ import session from 'express-session';
 import passport from 'passport';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 // @ts-ignore - no types available
 import connectPgSimple from 'connect-pg-simple';
 import { PrismaClient } from '@prisma/client';
@@ -24,6 +26,9 @@ import semesterRoutes from './routes/semesters.js';
 import calculationRoutes from './routes/calculations.js';
 // @ts-ignore - .js extension required for ES modules
 import exportRoutes from './routes/export.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PgSessionStore = connectPgSimple(session);
 
@@ -82,6 +87,22 @@ app.use('/api/semesters', semesterRoutes);
 app.use('/api/calculate', calculationRoutes);
 app.use('/api/export', exportRoutes);
 
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDistPath));
+  
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+} else {
+  // 404 handler for development
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+  });
+}
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
@@ -89,11 +110,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     error: err.message || 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
 });
 
 // Graceful shutdown
