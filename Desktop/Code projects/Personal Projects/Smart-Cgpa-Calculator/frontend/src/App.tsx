@@ -233,15 +233,22 @@ function App() {
       }
       syncTimerRef.current = setTimeout(async () => {
         if (!isAuthenticated || updatedSubjects.length === 0) return;
+        console.log('🎚️ Slider: Syncing', updatedSubjects.length, 'subjects to backend after 2s delay');
         try {
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
             method: 'POST',
             headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ subjects: updatedSubjects })
           });
+          if (response.ok) {
+            const result = await response.json();
+            console.log('🎚️ Slider: Sync successful ✅ - Backend returned', result.subjects?.length, 'subjects');
+          } else {
+            console.error('🎚️ Slider: Sync failed with status', response.status);
+          }
         } catch (error) {
-          console.error('Failed to sync after slider change:', error);
+          console.error('🎚️ Slider: Sync error', error);
         }
       }, 2000);
       
@@ -305,16 +312,24 @@ function App() {
         if (addSyncTimerRef.current) {
           clearTimeout(addSyncTimerRef.current);
         }
+        console.log('✏️ Edit: Scheduling sync in 1s with', updatedSubjects.length, 'subjects');
         addSyncTimerRef.current = setTimeout(async () => {
+          console.log('✏️ Edit: Syncing', updatedSubjects.length, 'subjects to backend');
           try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
               method: 'POST',
               headers: getAuthHeaders(),
               credentials: 'include',
               body: JSON.stringify({ subjects: updatedSubjects })
             });
+            if (response.ok) {
+              const result = await response.json();
+              console.log('✏️ Edit: Sync successful ✅ - Backend returned', result.subjects?.length, 'subjects');
+            } else {
+              console.error('✏️ Edit: Sync failed with status', response.status);
+            }
           } catch (error) {
-            console.error('Failed to sync after edit:', error);
+            console.error('✏️ Edit: Sync error', error);
           }
         }, 1000);
       }
@@ -335,16 +350,24 @@ function App() {
         if (addSyncTimerRef.current) {
           clearTimeout(addSyncTimerRef.current);
         }
+        console.log('➕ Add: Scheduling sync in 1s with', updatedSubjects.length, 'subjects');
         addSyncTimerRef.current = setTimeout(async () => {
+          console.log('➕ Add: Syncing', updatedSubjects.length, 'subjects to backend');
           try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
               method: 'POST',
               headers: getAuthHeaders(),
               credentials: 'include',
               body: JSON.stringify({ subjects: updatedSubjects })
             });
+            if (response.ok) {
+              const result = await response.json();
+              console.log('➕ Add: Sync successful ✅ - Backend returned', result.subjects?.length, 'subjects');
+            } else {
+              console.error('➕ Add: Sync failed with status', response.status);
+            }
           } catch (error) {
-            console.error('Failed to sync after add:', error);
+            console.error('➕ Add: Sync error', error);
           }
         }, 1000);
       }
