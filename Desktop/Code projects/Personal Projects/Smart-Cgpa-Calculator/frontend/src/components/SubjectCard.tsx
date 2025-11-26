@@ -130,6 +130,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       {/* SEE Slider */}
       <div className="mb-4">
         <SubjectSlider
+          key={code}
           subjectName={name}
           cie={cie}
           see={see}
