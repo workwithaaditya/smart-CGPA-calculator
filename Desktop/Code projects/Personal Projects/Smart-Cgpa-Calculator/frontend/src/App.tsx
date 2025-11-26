@@ -415,9 +415,6 @@ function App() {
             >
               Smart CGPA Calculator
             </motion.h1>
-            <p className="text-gray-400 text-base font-light mt-2">
-              Interactive SGPA prediction with intelligent planning
-            </p>
             {!isAuthenticated && (
               <p className="text-xs text-gray-500 mt-1">
                 Working offline • Sign in to sync across devices
