@@ -15,7 +15,6 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from '../src/routes/auth.js';
 import subjectRoutes from '../src/routes/subjects.js';
 import semesterRoutes from '../src/routes/semesters.js';
-import calculateRoutes from '../src/routes/calculate.js';
 import exportRoutes from '../src/routes/export.js';
 
 // Import Passport config
@@ -82,7 +81,6 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/semesters', semesterRoutes);
-app.use('/api/calculate', calculateRoutes);
 app.use('/api/export', exportRoutes);
 
 // Export for Vercel
