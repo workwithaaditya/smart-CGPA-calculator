@@ -576,9 +576,9 @@ function App() {
                 Your Subjects ({subjects.length})
               </h2>
               {(() => {
-                const sorted = subjects.slice().sort((a,b) => b.credits - a.credits);
+                // Group by credits while maintaining insertion order
                 const groups: Record<number, Subject[]> = {};
-                sorted.forEach(s => { (groups[s.credits] ||= []).push(s); });
+                subjects.forEach(s => { (groups[s.credits] ||= []).push(s); });
                 const creditOrder = Object.keys(groups).map(Number).sort((a,b) => b - a);
                 return (
                   <div className="flex flex-wrap justify-center gap-16">
