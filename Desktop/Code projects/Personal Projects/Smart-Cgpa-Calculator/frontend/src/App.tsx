@@ -387,7 +387,9 @@ function App() {
       if (addSyncTimerRef.current) {
         clearTimeout(addSyncTimerRef.current);
       }
+      console.log('Delete: Scheduling sync in 1s with', updatedSubjects.length, 'subjects');
       addSyncTimerRef.current = setTimeout(async () => {
+        console.log('Delete: Syncing', updatedSubjects.length, 'subjects to backend');
         try {
           await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
             method: 'POST',
@@ -395,6 +397,7 @@ function App() {
             credentials: 'include',
             body: JSON.stringify({ subjects: updatedSubjects })
           });
+          console.log('Delete: Sync successful');
         } catch (error) {
           console.error('Failed to sync after delete:', error);
         }
