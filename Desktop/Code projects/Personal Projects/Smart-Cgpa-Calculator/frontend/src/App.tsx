@@ -64,8 +64,9 @@ function App() {
     credits: 3
   });
 
-  // Debounce timer for slider sync
+  // Debounce timers
   const syncTimerRef = useRef<NodeJS.Timeout>();
+  const addSyncTimerRef = useRef<NodeJS.Timeout>();
 
   // Helper to get auth headers (memoized)
   const getAuthHeaders = useCallback((): HeadersInit => {
@@ -292,9 +293,12 @@ function App() {
         credits: newSubjectForm.credits
       } : s);
       setSubjects(updatedSubjects);
-      // Sync after edit with updated subjects
+      // Debounced sync - cancel previous timer
       if (isAuthenticated) {
-        setTimeout(async () => {
+        if (addSyncTimerRef.current) {
+          clearTimeout(addSyncTimerRef.current);
+        }
+        addSyncTimerRef.current = setTimeout(async () => {
           try {
             await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
               method: 'POST',
@@ -305,7 +309,7 @@ function App() {
           } catch (error) {
             console.error('Failed to sync after edit:', error);
           }
-        }, 500);
+        }, 1000);
       }
     } else {
       // Add new
@@ -318,9 +322,12 @@ function App() {
       };
       const updatedSubjects = [...subjects, newSubject];
       setSubjects(updatedSubjects);
-      // Sync after add with updated subjects
+      // Debounced sync - cancel previous timer if user adds multiple subjects quickly
       if (isAuthenticated) {
-        setTimeout(async () => {
+        if (addSyncTimerRef.current) {
+          clearTimeout(addSyncTimerRef.current);
+        }
+        addSyncTimerRef.current = setTimeout(async () => {
           try {
             await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
               method: 'POST',
@@ -331,7 +338,7 @@ function App() {
           } catch (error) {
             console.error('Failed to sync after add:', error);
           }
-        }, 500);
+        }, 1000);
       }
       if (!selectedSubjectCode) {
         setSelectedSubjectCode(newSubject.code);
