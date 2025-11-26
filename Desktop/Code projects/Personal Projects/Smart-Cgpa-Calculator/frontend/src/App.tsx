@@ -283,17 +283,29 @@ function App() {
 
     if (editingSubject) {
       // Update existing
-      setSubjects(prev => prev.map(s => s.code === editingSubject.code ? {
+      const updatedSubjects = subjects.map(s => s.code === editingSubject.code ? {
         ...s,
         code: newSubjectForm.code.toUpperCase(),
         name: newSubjectForm.name,
         cie: newSubjectForm.cie,
         see: newSubjectForm.see,
         credits: newSubjectForm.credits
-      } : s));
-      // Sync after edit
+      } : s);
+      setSubjects(updatedSubjects);
+      // Sync after edit with updated subjects
       if (isAuthenticated) {
-        setTimeout(() => syncToBackend(), 500);
+        setTimeout(async () => {
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              credentials: 'include',
+              body: JSON.stringify({ subjects: updatedSubjects })
+            });
+          } catch (error) {
+            console.error('Failed to sync after edit:', error);
+          }
+        }, 500);
       }
     } else {
       // Add new
@@ -304,10 +316,22 @@ function App() {
         see: newSubjectForm.see,
         credits: newSubjectForm.credits
       };
-      setSubjects([...subjects, newSubject]);
-      // Sync after add
+      const updatedSubjects = [...subjects, newSubject];
+      setSubjects(updatedSubjects);
+      // Sync after add with updated subjects
       if (isAuthenticated) {
-        setTimeout(() => syncToBackend(), 500);
+        setTimeout(async () => {
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/subjects/bulk`, {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              credentials: 'include',
+              body: JSON.stringify({ subjects: updatedSubjects })
+            });
+          } catch (error) {
+            console.error('Failed to sync after add:', error);
+          }
+        }, 500);
       }
       if (!selectedSubjectCode) {
         setSelectedSubjectCode(newSubject.code);
