@@ -205,12 +205,14 @@ const SubjectCardComponent: React.FC<SubjectCardProps> = ({
 
 export const SubjectCard = memo(SubjectCardComponent, (prevProps, nextProps) => {
   // Only re-render if this specific subject's data changed
+  // Ignore callbacks since parent uses useCallback
   return (
     prevProps.subject.code === nextProps.subject.code &&
     prevProps.subject.name === nextProps.subject.name &&
     prevProps.subject.cie === nextProps.subject.cie &&
     prevProps.subject.see === nextProps.subject.see &&
     prevProps.subject.credits === nextProps.subject.credits &&
-    prevProps.currentSgpa === nextProps.currentSgpa
+    prevProps.currentSgpa === nextProps.currentSgpa &&
+    prevProps.allSubjects.length === nextProps.allSubjects.length
   );
 });

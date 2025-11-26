@@ -5,7 +5,7 @@
  * Supports local-first usage with optional cloud sync via Google OAuth.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubjectCard } from './components/SubjectCard';
 import { Charts } from './components/Charts';
@@ -100,10 +100,8 @@ function App() {
     if (!isAuthenticated) {
       saveLocalSubjects(subjects);
     }
-    // If authenticated, sync to backend
-    if (isAuthenticated && subjects.length > 0) {
-      syncToBackend();
-    }
+    // Note: Removed automatic sync to prevent infinite loops
+    // Sync now happens manually or on specific actions
   }, [subjects, isAuthenticated]);
 
   const checkAuthStatus = async () => {
@@ -230,11 +228,20 @@ function App() {
   const dynamicGradient = `linear-gradient(120deg, ${bgSet[0]}, ${bgSet[1]}, ${bgSet[2]})`;
   
   // Handle SEE change for a subject
-  const handleSeeChange = (code: string, newSee: number) => {
+  const handleSeeChange = useCallback((code: string, newSee: number) => {
     setSubjects(prev =>
       prev.map((s: Subject) => (s.code === code ? { ...s, see: newSee } : s))
     );
-  };
+  }, []);
+
+  // Create memoized callback map for each subject (prevents re-renders)
+  const seeChangeCallbacks = useMemo(() => {
+    const map = new Map<string, (newSee: number) => void>();
+    subjects.forEach(subject => {
+      map.set(subject.code, (newSee: number) => handleSeeChange(subject.code, newSee));
+    });
+    return map;
+  }, [subjects.map(s => s.code).join(','), handleSeeChange]);
   
   // Add new subject
   const resetSubjectForm = () => {
@@ -275,6 +282,10 @@ function App() {
         see: newSubjectForm.see,
         credits: newSubjectForm.credits
       } : s));
+      // Sync after edit
+      if (isAuthenticated) {
+        setTimeout(() => syncToBackend(), 500);
+      }
     } else {
       // Add new
       const newSubject: Subject = {
@@ -285,6 +296,10 @@ function App() {
         credits: newSubjectForm.credits
       };
       setSubjects([...subjects, newSubject]);
+      // Sync after add
+      if (isAuthenticated) {
+        setTimeout(() => syncToBackend(), 500);
+      }
       if (!selectedSubjectCode) {
         setSelectedSubjectCode(newSubject.code);
       }
@@ -579,7 +594,7 @@ function App() {
                               >
                                 <SubjectCard
                                   subject={subject}
-                                  onSeeChange={(newSee) => handleSeeChange(subject.code, newSee)}
+                                  onSeeChange={seeChangeCallbacks.get(subject.code)!}
                                   onRemove={() => handleRemoveSubject(subject.code)}
                                   onEdit={() => {
                                     setEditingSubject(subject);
