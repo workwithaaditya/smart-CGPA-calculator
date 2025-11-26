@@ -18,7 +18,7 @@ import {
 } from './lib/SGPAEngine';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut } from 'lucide-react';
 
 // Local storage key
 const LOCAL_STORAGE_KEY = 'smart-cgpa-subjects';
