@@ -5,7 +5,7 @@
  * and smooth animations for crossing grade boundaries.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, memo } from 'react';
 import {
   calculateCriticalSEEValues,
   getGradeBandForSEE,
@@ -27,7 +27,7 @@ interface ToastMessage {
   visible: boolean;
 }
 
-export const SubjectSlider: React.FC<SubjectSliderProps> = ({
+const SubjectSliderComponent: React.FC<SubjectSliderProps> = ({
   subjectName,
   cie,
   see,
@@ -258,3 +258,13 @@ export const SubjectSlider: React.FC<SubjectSliderProps> = ({
     </div>
   );
 };
+
+export const SubjectSlider = memo(SubjectSliderComponent, (prevProps, nextProps) => {
+  // Only re-render if SEE, CIE, or config changed for THIS slider
+  return (
+    prevProps.see === nextProps.see &&
+    prevProps.cie === nextProps.cie &&
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.subjectName === nextProps.subjectName
+  );
+});

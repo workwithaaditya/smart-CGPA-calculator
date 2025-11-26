@@ -5,7 +5,7 @@
  * and real-time statistics (Total, GP, Weighted Points).
  */
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { MoreVertical, Trash2, Edit } from 'lucide-react';
 import { SubjectSlider } from './SubjectSlider';
 import {
@@ -28,7 +28,7 @@ interface SubjectCardProps {
   currentSgpa?: number;
 }
 
-export const SubjectCard: React.FC<SubjectCardProps> = ({
+const SubjectCardComponent: React.FC<SubjectCardProps> = ({
   subject,
   onSeeChange,
   onRemove,
@@ -202,3 +202,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     </div>
   );
 };
+
+export const SubjectCard = memo(SubjectCardComponent, (prevProps, nextProps) => {
+  // Only re-render if this specific subject's data changed
+  return (
+    prevProps.subject.code === nextProps.subject.code &&
+    prevProps.subject.name === nextProps.subject.name &&
+    prevProps.subject.cie === nextProps.subject.cie &&
+    prevProps.subject.see === nextProps.subject.see &&
+    prevProps.subject.credits === nextProps.subject.credits &&
+    prevProps.currentSgpa === nextProps.currentSgpa
+  );
+});
