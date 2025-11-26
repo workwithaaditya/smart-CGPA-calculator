@@ -177,7 +177,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           {/* Stats Grid (remaining: Weighted & Max SGPA context) */}
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="stat-box bg-gray-700/30 p-3 rounded-lg">
-              <div className="text-xs text-gray-400 font-medium">Weighted (GP×Cr)</div>
+              <div className="text-xs text-gray-400 font-medium">Weighted</div>
               <div className="text-xl font-bold text-white">{(gp * credits).toFixed(1)}</div>
             </div>
             <div className="stat-box bg-gray-700/30 p-3 rounded-lg">
