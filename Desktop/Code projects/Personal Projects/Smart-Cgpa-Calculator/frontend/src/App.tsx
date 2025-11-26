@@ -170,7 +170,8 @@ function App() {
         headers: getAuthHeaders()
       });
       if (response.ok) {
-        const backendSubjects = await response.json();
+        const data = await response.json();
+        const backendSubjects = data.subjects || data; // Handle both {subjects: []} and [] formats
         if (backendSubjects.length > 0) {
           // Merge with local subjects (backend takes precedence)
           setSubjects(backendSubjects);
