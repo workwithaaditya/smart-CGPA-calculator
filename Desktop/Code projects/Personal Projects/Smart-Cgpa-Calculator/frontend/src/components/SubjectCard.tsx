@@ -141,15 +141,18 @@ const SubjectCardComponent: React.FC<SubjectCardProps> = ({
           <div className="bg-gray-700/30 rounded-md py-2">
             <div className="text-[10px] uppercase tracking-wider text-gray-400">SEE</div>
             <div className="text-sm font-semibold text-white">{see}</div>
+            <div className="text-[10px] mt-1 text-gray-400">
+              Range: {see >= 80 ? '80-100' : see >= 60 ? '60-80' : '0-60'}
+            </div>
           </div>
           <div className="bg-gray-700/30 rounded-md py-2">
-            <div className="text-[10px] uppercase tracking-wider text-gray-400">SEE Scaled</div>
-            <div className="text-sm font-semibold text-white">{seeScaled.toFixed(1)}</div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-400">Total</div>
+            <div className="text-sm font-semibold text-white">{total.toFixed(1)}</div>
           </div>
-            <div className="bg-gray-700/30 rounded-md py-2">
-              <div className="text-[10px] uppercase tracking-wider text-gray-400">Total</div>
-              <div className="text-sm font-semibold text-white">{total.toFixed(1)}</div>
-            </div>
+          <div className="bg-gray-700/30 rounded-md py-2">
+            <div className="text-[10px] uppercase tracking-wider text-gray-400">Grade</div>
+            <div className="text-sm font-semibold text-white">GP {gp} ({gp >= 9 ? 'A+' : gp >= 8 ? 'A' : gp >= 7 ? 'B+' : gp >= 6 ? 'B' : 'C'})</div>
+          </div>
         </div>
       </div>
 
@@ -168,6 +171,20 @@ const SubjectCardComponent: React.FC<SubjectCardProps> = ({
             <span className="text-lg font-bold text-white">
               {cie} / {config.maxCIE}
             </span>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div className="stat-box bg-gray-800/30 p-3 rounded-lg">
+              <div className="text-xs text-gray-400 font-medium">SEE Scaled</div>
+              <div className="text-lg font-bold text-white">{seeScaled.toFixed(1)}</div>
+            </div>
+            <div className="stat-box bg-gray-800/30 p-3 rounded-lg">
+              <div className="text-xs text-gray-400 font-medium">SEE Range</div>
+              <div className="text-lg font-bold text-white">{see >= 80 ? '80-100' : see >= 60 ? '60-80' : '0-60'}</div>
+            </div>
+            <div className="stat-box bg-gray-800/30 p-3 rounded-lg">
+              <div className="text-xs text-gray-400 font-medium">Total</div>
+              <div className="text-lg font-bold text-white">{total.toFixed(1)}</div>
+            </div>
           </div>
         </div>
       )}

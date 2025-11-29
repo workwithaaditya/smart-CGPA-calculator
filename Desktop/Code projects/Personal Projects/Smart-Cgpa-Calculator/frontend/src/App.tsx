@@ -66,7 +66,7 @@ function App() {
     name: '',
     cie: undefined as unknown as number,
     see: 100,
-    credits: 3
+    credits: undefined as unknown as number
   });
 
   // Debounce timers
@@ -270,7 +270,7 @@ function App() {
   // Add new subject
   const resetSubjectForm = () => {
     setEditingSubject(null);
-    setNewSubjectForm({ code: '', name: '', cie: undefined as unknown as number, see: 100, credits: 3 });
+    setNewSubjectForm({ code: '', name: '', cie: undefined as unknown as number, see: 100, credits: undefined as unknown as number });
   };
 
   const openAddSubjectModal = () => {
@@ -295,7 +295,7 @@ function App() {
       alert('SEE must be between 0 and 100');
       return;
     }
-    if (newSubjectForm.credits <= 0) {
+    if (newSubjectForm.credits <= 0 || !Number.isFinite(newSubjectForm.credits)) {
       alert('Credits must be positive');
       return;
     }
@@ -841,9 +841,12 @@ function App() {
                       type="number"
                       min="1"
                       max="20"
-                      value={newSubjectForm.credits}
+                      value={Number.isFinite(newSubjectForm.credits) ? newSubjectForm.credits : ''}
                       placeholder="e.g., 3"
-                      onChange={(e) => setNewSubjectForm({...newSubjectForm, credits: parseInt(e.target.value) || 1})}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewSubjectForm({...newSubjectForm, credits: val === '' ? (undefined as unknown as number) : (parseInt(val) || 0)});
+                      }}
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
