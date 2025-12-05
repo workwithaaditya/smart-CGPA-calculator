@@ -518,7 +518,7 @@ function App() {
               animate={{ scale: 1 }}
               className="text-5xl font-light tracking-tight text-white text-center"
             >
-              Smart CGPA Calculator
+              Smart CGPA Studio
             </motion.h1>
             {!isAuthenticated && (
               <p className="text-xs text-gray-500 mt-1">
